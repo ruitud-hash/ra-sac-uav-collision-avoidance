@@ -99,5 +99,4 @@ their sharing and anonymity requirements are settled.
 
 ## License
 
-No license has been selected yet. Add an institution-approved open-source
-license before making the repository public.
+This project is released under the MIT License. See `LICENSE`.
