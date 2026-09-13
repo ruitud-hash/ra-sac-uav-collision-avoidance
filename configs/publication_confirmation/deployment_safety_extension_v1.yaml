@@ -1,0 +1,132 @@
+schema_version: 1
+status: FROZEN_BEFORE_SHIELD_EXECUTION
+frozen_date: 2026-08-10
+scope: publication_confirmation_v1_deployment_safety
+analysis_role: prospective_follow_on_conditioned_on_opened_policy_only_results
+
+protocol_boundary:
+  original_protocol_path: configs/publication_confirmation/protocol.yaml
+  original_protocol_sha256: 4f251cba613cabe77826936033d2c876d4831faae73c65542bc2df9b57a4145c
+  original_protocol_unchanged: true
+  implementation_manifest_sha256: 883f91d8ffc00aa61247aff0b5d425a3b3f9863f7ae58b9aa252751c62c4aee1
+  policy_only_results_opened_before_this_extension: true
+  shield_results_opened_before_this_extension: false
+  originally_authorized_new_cells: 40
+  extension_cells:
+    description: Combined-OOD static_boundary_only and dynamic_ttc_only
+    count: 20
+  interpretation: >-
+    The 20 extension cells are prospectively frozen before any Shield result is
+    observed, but they are not part of the original pre-blind protocol and must
+    be labelled as a policy-result-conditioned deployment-safety extension.
+
+research_questions:
+  RQ_S1: Can full shielding reduce Combined-OOD safety failure, especially for training seed 48207?
+  RQ_S2: Does dynamic-only shielding suppress the pre-identified collision-heavy tail failure without redirecting it to timeout, static collision, or out-of-bounds?
+  RQ_S3: What incremental differences are observed between isolated static/boundary, isolated dynamic/TTC, and full shield configurations?
+  RQ_S4: What intervention burden and terminal-mode trade-offs accompany any safety improvement?
+
+matrix:
+  methods: [RA-SAC-v3.2-c, SAC-Attention-v3]
+  training_seeds: [18207, 28207, 38207, 48207, 58207]
+  environments: [medium_id, combined_ood]
+  modes: [policy_only, static_boundary_only, dynamic_ttc_only, full_shield]
+  policy_only_reference:
+    rerun: false
+    source_allowlist: outputs/publication_confirmation_v1/formal_freeze/authorized_scientific_cells.yaml
+    source_allowlist_sha256: 208adfb2c39fba7945d63bd61db9502da6d2aca265da3096090bb1e0c996a514
+    cells: 20
+  new_modes: [static_boundary_only, dynamic_ttc_only, full_shield]
+  new_cells: 60
+  new_episodes: 12000
+  complete_analysis_cells: 80
+  complete_analysis_episodes: 16000
+
+scientific_configuration:
+  evaluation_seed_start: 149000
+  evaluation_seed_end: 149199
+  episodes_per_cell: 200
+  checkpoint_rule: fixed_nominal_training_budget
+  checkpoint_registry: outputs/publication_confirmation_v1/formal_freeze/execution_asset_inventory.yaml
+  evaluator_sha256: 61bc38c5a1d076bb7181c9311a6ececd4f81a6123fc7151bac90496df5a590b1
+  environment_sha256:
+    medium_id: 312b66f9e4f1246c7d3059b424613fcf375c5bcb3e9d45d62fb827e42977fe12
+    combined_ood: 851d87a5703bfb7f392433c74f2433c2f798cf9f15f238f771ef891ad73c7daa
+  shield_core_sha256: 5f7266399b4068525e4079dd364cf0d3f768ce664ef313c41b0c12c427e5685d
+  shield_parameters_retuning_allowed: false
+  algorithm_or_checkpoint_changes_allowed: false
+
+preidentified_diagnostic_slice:
+  training_seed: 48207
+  selection_timing: selected from completed policy-only blind analysis before Shield execution
+  rationale: persistent disturbance-sensitive collision-heavy tail realization
+  environments: [medium_id, combined_ood]
+  modes: [policy_only, static_boundary_only, dynamic_ttc_only, full_shield]
+  metrics: [success, dynamic_collision, static_collision, total_collision, safety_failure, timeout, out_of_bounds, reward, intervention_burden]
+
+contrasts:
+  within_method_primary:
+    definition: shield_mode_minus_policy_only
+    modes: [static_boundary_only, dynamic_ttc_only, full_shield]
+    interpretation:
+      higher_is_better: [success_rate, avg_reward]
+      lower_is_better: [dynamic_collision_rate, static_collision_rate, collision_rate, safety_failure_rate, timeout_rate, out_of_bounds_rate]
+  between_method_secondary:
+    definition: RA-SAC-v3.2-c_minus_SAC-Attention-v3
+  additive_interaction_claim_allowed: false
+
+intervention_metrics:
+  modified_episode_count: episodes with shield_intervention_count greater than zero
+  modified_episode_rate: modified_episode_count divided by episodes
+  modifications_per_episode: total modifications divided by episodes
+  SIF: mean shield interventions per episode
+  SIR: total shield interventions divided by total decision steps
+  SCM: total action-correction magnitude divided by total interventions
+  distribution: [median_interventions_per_episode, p95_interventions_per_episode]
+  full_shield_source_attribution_available: false
+  limitation: >-
+    The frozen evaluator records total modifications but not per-intervention
+    static-versus-dynamic source in full-shield mode. Isolated P1/P2 modes remain
+    source-specific by construction; P3 source-specific counts will not be claimed.
+
+episode_transition_analysis:
+  pairing_unit: method + training_seed + environment + evaluation_seed
+  comparisons: [policy_only_to_static_boundary_only, policy_only_to_dynamic_ttc_only, policy_only_to_full_shield]
+  categories: [success, dynamic_collision, static_collision, timeout, out_of_bounds]
+  report: [shield_rescued_unsafe_episodes, collision_to_other_failure, shield_induced_regressions, failure_redistribution]
+
+analysis_rules:
+  statistical_unit: paired_training_seed
+  episode_pseudoreplication_forbidden: true
+  report: [seedwise_difference, mean_difference, median_difference, paired_bootstrap_95pct_CI, win_tie_loss, worst_seed]
+  significance_language_primary: false
+  performance_inspection_before_integrity_audit: forbidden
+  first_analysis_output_overwrite: forbidden
+
+execution_and_audit:
+  scheduler_changes_do_not_change_scientific_configuration: true
+  incomplete_outputs_analysis_eligible: false
+  partial_plus_rerun_concatenation_allowed: false
+  required_new_cells: 60
+  required_new_episodes: 12000
+  required_checks:
+    - exact 2 methods x 5 training seeds x 2 environments x 3 new modes
+    - exactly 200 episodes and evaluation seeds 149000-149199 per cell
+    - checkpoint, environment, evaluator, and shield hashes match frozen inventories
+    - evaluation_mode and enabled/static_boundary/dynamic_ttc flags match requested mode
+    - static_boundary_only has dynamic_enabled false
+    - dynamic_ttc_only has static_boundary_enabled false
+    - full_shield has both layers enabled
+    - terminal outcomes are mutually exclusive and conserve 200 episodes
+    - collision equals dynamic plus static collision
+    - safety failure equals collision plus out-of-bounds
+    - no duplicate or missing evaluation seeds
+    - no NaN or Inf
+    - stderr is empty
+    - only an exclusive authorized 60-cell allowlist may enter analysis
+
+claim_guardrails:
+  causal_shield_mechanism_claim_allowed: false
+  certified_realtime_claim_allowed: false
+  extension_may_be_described_as_original_blind_protocol: false
+  allowed_term: deployment-safety extension frozen before Shield-result inspection

@@ -1,0 +1,111 @@
+schema_version: 1
+status: FROZEN_BEFORE_BASELINE_RESULT_OPENING
+frozen_date: 2026-08-12
+scope: publication_confirmation_v1_broad_baseline_extension
+analysis_role: prospective_follow_on_conditioned_on_opened_ra_sac_and_sac_attention_results
+
+protocol_boundary:
+  original_protocol_path: configs/publication_confirmation/protocol.yaml
+  original_protocol_sha256: 4f251cba613cabe77826936033d2c876d4831faae73c65542bc2df9b57a4145c
+  original_protocol_unchanged: true
+  checkpoint_inventory: outputs/publication_confirmation_v1/formal_freeze/execution_asset_inventory.yaml
+  checkpoint_inventory_status: FROZEN_BEFORE_BLIND_OPENING
+  evaluation_seed_block: [149000, 149199]
+  seed_block_already_opened_for_ra_sac_and_sac_attention: true
+  baseline_results_for_this_seed_block_opened: false
+  extension_may_be_described_as_original_blind_protocol: false
+  allowed_description: post-opening prospective broad-baseline extension with frozen checkpoints and evaluation rules
+
+baseline_roles:
+  strong_matched_comparator: SAC-Attention-v3
+  breadth_baselines: [SAC-MLP, TD3-MLP, PPO-MLP]
+  hierarchy:
+    SAC-MLP: stochastic off-policy SAC with flat MLP representation
+    TD3-MLP: deterministic off-policy actor-critic
+    PPO-MLP: stochastic on-policy policy-gradient
+
+batch4_policy_only:
+  methods: [SAC-MLP, TD3-MLP, PPO-MLP]
+  training_seeds: [18207, 28207, 38207, 48207, 58207]
+  environments: [medium_id, disturbance_ood, behavior_ood, composition_ood, combined_ood]
+  mode: policy_only
+  cells: 75
+  episodes: 15000
+  original_protocol_cells: 15
+  post_opening_extension_cells: 60
+
+batch5_full_shield:
+  methods: [SAC-MLP, TD3-MLP, PPO-MLP]
+  training_seeds: [18207, 28207, 38207, 48207, 58207]
+  environments: [medium_id, combined_ood]
+  mode: full_shield
+  cells: 30
+  episodes: 6000
+  original_protocol_cells: 15
+  post_opening_extension_cells: 15
+
+complete_publication_matrices_after_completion:
+  five_method_policy_only:
+    methods: [RA-SAC-v3.2-c, SAC-Attention-v3, SAC-MLP, TD3-MLP, PPO-MLP]
+    environments: [medium_id, disturbance_ood, behavior_ood, composition_ood, combined_ood]
+    cells: 125
+  five_method_deployment:
+    methods: [RA-SAC-v3.2-c, SAC-Attention-v3, SAC-MLP, TD3-MLP, PPO-MLP]
+    environments: [medium_id, combined_ood]
+    modes: [policy_only, full_shield]
+    cells: 100
+  existing_ra_sac_and_sac_attention_cells_rerun: false
+  new_cells: 105
+  new_episodes: 21000
+
+scientific_configuration:
+  episodes_per_cell: 200
+  evaluation_seed_start: 149000
+  evaluation_seed_end: 149199
+  paired_scenarios_across_all_methods: true
+  checkpoint_rule: fixed_nominal_training_budget
+  checkpoint_steps:
+    SAC-MLP: 1000000
+    TD3-MLP: 1000000
+    PPO-MLP: 1003520
+  ppo_step_rationale: first completed rollout boundary at or above the nominal 1M budget
+  shield_mode_for_batch5: full_shield
+  shield_parameters_retuning_allowed: false
+  checkpoint_or_algorithm_changes_allowed: false
+  environment_changes_allowed: false
+
+analysis_rules:
+  statistical_unit: paired_training_seed
+  episode_pseudoreplication_forbidden: true
+  report: [mean, sample_sd, seedwise_result, worst_seed, OOD_minus_medium_id]
+  significance_language_primary: false
+  deep_paired_mechanism_diagnostics_restricted_to: [RA-SAC-v3.2-c, SAC-Attention-v3]
+  broad_baseline_role: performance_hierarchy_and_deployment_context
+  first_analysis_output_overwrite: forbidden
+
+metrics:
+  performance: [success_rate, dynamic_collision_rate, static_collision_rate, collision_rate, safety_failure_rate, timeout_rate, out_of_bounds_rate, avg_reward, avg_fhp]
+  intervention: [modified_episode_rate, SIF, SIR, SCM, p95_interventions_per_episode]
+  shield_effect: full_shield_minus_policy_only
+
+claim_guardrails:
+  superiority_claim_allowed: false
+  causal_mechanism_claim_for_breadth_baselines_allowed: false
+  full_shield_source_attribution_available: false
+  certified_realtime_claim_allowed: false
+  baseline_results_must_not_trigger_algorithm_or_shield_retuning: true
+
+frozen_source_sha256:
+  scripts/evaluate_publication_mlp_baseline.py: 13901a7d03e126f0912213db55c4669044c9c25aa6e4eeb5536959c9662113e8
+  scripts/run_publication_broad_baselines.py: c4c29f5e2e84958b610d11f2ba2a409a97b6ee84e9d561b22f36892692155df6
+  agents/observation.py: 0d60121a6076ec0fe3c7324065a1ebe663ad854138f39f9937c22ab64955657a
+  agents/sac_mlp.py: 50baa02c6e4135d258d0514422f6a51ebd8a2c3e8bf7baab76bf90777359ec3d
+  agents/td3_mlp.py: cebe511fae09f32c81dba76e8df68c6cae4c5919cdf7838a204e6f2c64f32d79
+  agents/ppo_mlp.py: e7b94fea4460b24cb9c2233d45836bd23c20ca297bb5fd30861d36dc9f7e2e4d
+  envs/uav_2d_env.py: d34f655d1f86aca474919d56519a55139e901d09e845a1ee30f79659e4db0130
+  utils/action_safety.py: 5f7266399b4068525e4079dd364cf0d3f768ce664ef313c41b0c12c427e5685d
+  utils/artifact_audit.py: c93085f6b80ca7e6afeaa74b7b08fe19d79753898d88334125613ff7fff62db2
+  utils/checkpoint_compat.py: 0974b5e8c994bdc13cc425f75045086f9884eafcc9067d780e351d1ac235e469
+  utils/experiment_protocol.py: e5856b6e9b17320763f9f899b0c639131beea7afc13893749bcfcb0ea8934898
+  utils/naming.py: 995fdea9123e1bcccd9989c761e4d489bd6671576e35cd7af61bc16b7154c01c
+  utils/training_logs.py: 5106b7dd267c278bdb448eebc49b3eefd2b1ca52c42bd8d7457a5f114bdf8723

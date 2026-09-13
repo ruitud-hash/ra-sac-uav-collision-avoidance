@@ -1,0 +1,27 @@
+env_config: configs/env_medium_v3_unified_id.yaml
+device: auto
+algorithm:
+  name: ppo_mlp_v3_medium_seed_38207
+seed: 38207
+training:
+  total_steps: 4000000
+  gamma: 0.99
+  eval_interval_steps: 100000
+  eval_episodes: 20
+  checkpoint_interval_steps: 500000
+  eval_seed: 17000
+  env_seed_namespace: formal_v3_training
+  rollout_steps: 4096
+  update_epochs: 8
+  minibatch_size: 512
+  gae_lambda: 0.95
+  clip_ratio: 0.2
+  value_coef: 0.5
+  entropy_coef: 0.006
+  max_grad_norm: 0.5
+  lr: 0.0002
+  hidden_sizes:
+  - 256
+  - 256
+output:
+  directory: outputs/train_ppo_mlp_v3_medium_seed_38207

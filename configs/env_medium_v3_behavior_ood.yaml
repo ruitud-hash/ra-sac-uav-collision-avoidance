@@ -1,0 +1,265 @@
+protocol:
+  name: unified_15d_ood
+  difficulty: medium
+  token_dim: 15
+  max_tokens: 48
+  dynamic_type_order:
+  - slow_uav
+  - fast_uav
+  - non_cooperative_aircraft
+  - maneuvering_intruder
+  terminal_outcomes:
+  - out_of_bounds
+  - static_collision
+  - dynamic_collision
+  - success
+  - timeout
+  split: ood
+  ood_axis: behavior
+  evaluation_only: true
+  checkpoint_selection_eligible: false
+  reference_environment: env_medium_v3_unified_id.yaml
+seed: 72
+world:
+  size_m: 15000.0
+  boundary_margin_m: 300.0
+uav:
+  body_radius_m: 15.0
+  v_min_mps: 0.0
+  v_max_mps: 15.0
+  a_max_mps2: 2.0
+  omega_max_degps: 15.0
+  dt_s: 1.0
+  max_steps: 1200
+  start_speed_mps: 8.0
+  disturbances:
+    control_delay_steps: 0
+    wind:
+      enabled: true
+    actuation_error:
+      enabled: true
+task:
+  min_start_goal_distance_m: 4000.0
+  max_start_goal_distance_m: 10000.0
+  goal_radius_m: 80.0
+  require_direct_path: true
+  direct_path_samples: 128
+  direct_path_clearance_m: 20.0
+perception:
+  sense_radius_m: 650.0
+  max_tokens: 48
+  ttc_max_s: 60.0
+obstacles:
+  dynamic_count: 14
+  static_count: 18
+  dynamic_speed_min_mps: 7.0
+  dynamic_speed_max_mps: 15.0
+  dynamic_protect_radius_m: 30.0
+  dynamic_warning_radius_m: 120.0
+  static_safe_margin_m: 40.0
+  dynamic_motion_model: noisy_linear
+  dynamic_noise_interval_steps: 5
+  dynamic_heading_noise_std_deg: 1.0
+  dynamic_speed_noise_std_mps: 0.2
+  dynamic_crossing_edge_offset_m: 120.0
+  dynamic_crossing_opposite_prob: 0.7
+  heterogeneous_dynamic:
+    enabled: true
+    types:
+      slow_uav:
+        probability: 0.25
+        speed_min_mps: 4.0
+        speed_max_mps: 8.0
+        protect_radius_m: 22.0
+        motion_model: noisy_linear
+        heading_noise_std_deg: 2.5
+        speed_noise_std_mps: 0.6
+        noise_interval_steps: 3
+        velocity_uncertainty_std_mps: 0.7
+      fast_uav:
+        probability: 0.25
+        speed_min_mps: 12.0
+        speed_max_mps: 18.0
+        protect_radius_m: 35.0
+        motion_model: accelerating
+        acceleration_min_mps2: -2.0
+        acceleration_max_mps2: 2.5
+        velocity_uncertainty_std_mps: 1.1
+      non_cooperative_aircraft:
+        probability: 0.25
+        speed_min_mps: 14.0
+        speed_max_mps: 22.0
+        protect_radius_m: 55.0
+        motion_model: sudden_maneuver
+        maneuver_step_min: 2
+        maneuver_step_max: 7
+        maneuver_heading_min_deg: 90.0
+        maneuver_heading_max_deg: 150.0
+        maneuver_speed_scale_min: 0.6
+        maneuver_speed_scale_max: 1.5
+        velocity_uncertainty_std_mps: 2.2
+      maneuvering_intruder:
+        probability: 0.25
+        speed_min_mps: 8.0
+        speed_max_mps: 14.0
+        protect_radius_m: 32.0
+        motion_model: constant_turn
+        turn_rate_min_degps: 8.0
+        turn_rate_max_degps: 12.0
+        velocity_uncertainty_std_mps: 1.4
+  nonlinear_scenarios:
+    enabled: true
+    scenarios:
+      head_on:
+        count: 2
+        type: fast_uav
+        encounter_fraction: 0.4
+        spawn_offset_m: 900.0
+      crossing:
+        count: 2
+        type: slow_uav
+        encounter_fraction: 0.48
+        spawn_offset_m: 750.0
+      constant_turn:
+        count: 2
+        type: maneuvering_intruder
+        encounter_fraction: 0.52
+        spawn_offset_m: 850.0
+      accelerating:
+        count: 2
+        type: fast_uav
+        encounter_fraction: 0.58
+        spawn_offset_m: 950.0
+      sudden_maneuver:
+        count: 2
+        type: non_cooperative_aircraft
+        encounter_fraction: 0.62
+        spawn_offset_m: 850.0
+      coordinated_pincer:
+        count: 4
+        type: maneuvering_intruder
+        encounter_fraction: 0.68
+        spawn_offset_m: 1000.0
+        motion_model: accelerating_turn
+        acceleration_mps2: 0.8
+domain_randomization:
+  enabled: true
+  wind:
+    enabled: true
+    base_speed_mps:
+    - 0.5
+    - 3.0
+    speed_variation_mps:
+    - 0.0
+    - 1.5
+    base_direction_deg:
+    - -180.0
+    - 180.0
+    direction_variation_deg:
+    - 0.0
+    - 25.0
+    period_s:
+    - 60.0
+    - 180.0
+    phase_deg:
+    - 0.0
+    - 360.0
+  actuation_error:
+    enabled: true
+    accel_std_mps2:
+    - 0.02
+    - 0.12
+    omega_std_degps:
+    - 0.2
+    - 1.0
+  perception_noise:
+    own_position_std_m:
+    - 0.5
+    - 3.0
+    own_speed_std_mps:
+    - 0.05
+    - 0.3
+    own_heading_std_deg:
+    - 0.2
+    - 1.5
+    intruder_position_std_m:
+    - 1.0
+    - 5.0
+    intruder_velocity_std_mps:
+    - 0.1
+    - 0.5
+  control_delay_steps:
+  - 0
+  - 2
+  dynamic_obstacles:
+    speed_min_mps:
+    - 6.0
+    - 9.0
+    speed_max_mps:
+    - 13.0
+    - 16.0
+    heading_noise_std_deg:
+    - 0.5
+    - 3.0
+    speed_noise_std_mps:
+    - 0.1
+    - 0.6
+    noise_interval_steps:
+    - 3
+    - 8
+    crossing_opposite_prob:
+    - 0.55
+    - 0.85
+    motion_models:
+    - linear_bounce
+    - noisy_linear
+    - random_crossing
+risk:
+  prediction_uncertainty:
+    enabled: true
+    alpha_tcpa: 1.0
+    beta_dcpa: 1.0
+    gamma_sigma: 0.02
+    time_epsilon_s: 0.5
+    distance_epsilon_m: 5.0
+    base_position_std_m: 3.0
+    intruder_velocity_std_mps: 0.6
+    wind_velocity_std_mps: 0.5
+    horizon_max_s: 20.0
+    confidence_k: 1.96
+    log_scale: 3.0
+reward:
+  progress_scale: 8.0
+  goal_reward: 100.0
+  dynamic_collision_penalty: 150.0
+  static_collision_penalty: 150.0
+  boundary_penalty: 120.0
+  boundary_safe_margin_m: 300.0
+  boundary_near_penalty: 0.4
+  timeout_penalty: 50.0
+  warning_penalty: 0.4
+  static_near_penalty: 0.3
+  smooth_penalty_scale: 0.05
+  step_penalty: 0.02
+  safe_progress:
+    enabled: true
+    scale: 0.6
+    negative_scale: 0.25
+    progress_reference_m: 15.0
+    clearance_reference_m: 160.0
+    boundary_reference_m: 300.0
+    ttc_reference_s: 20.0
+visualization:
+  save_path: outputs/medium_v3_behavior_ood_episode.png
+ood_definition:
+  reference_environment: env_medium_v3_unified_id.yaml
+  shifted_axes:
+  - behavior
+  fixed_contract:
+  - world
+  - uav_limits
+  - task
+  - perception_shape
+  - reward
+  - termination
+  selection_policy: report_only_after_id_checkpoint_is_frozen

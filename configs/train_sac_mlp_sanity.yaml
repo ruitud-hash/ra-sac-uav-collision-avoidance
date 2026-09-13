@@ -1,0 +1,24 @@
+env_config: configs/env_sanity.yaml
+
+seed: 1107
+device: auto
+
+training:
+  total_steps: 20000
+  start_steps: 2000
+  update_after: 1000
+  update_every: 1
+  batch_size: 256
+  replay_size: 200000
+  gamma: 0.99
+  tau: 0.005
+  actor_lr: 0.0003
+  critic_lr: 0.0003
+  alpha_lr: 0.0003
+  hidden_sizes: [256, 256]
+  eval_interval_steps: 2000
+  eval_episodes: 10
+  checkpoint_interval_steps: 5000
+
+output:
+  directory: outputs/train_sac_mlp_sanity

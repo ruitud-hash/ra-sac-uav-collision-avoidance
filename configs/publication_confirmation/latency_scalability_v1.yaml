@@ -1,0 +1,128 @@
+schema_version: 1
+status: FROZEN_BEFORE_BENCHMARK
+frozen_at_utc: '2026-08-14T07:36:19.8991608Z'
+purpose: publication-grade batch-size-one online latency and obstacle scalability benchmark
+claim_boundary:
+  allowed: computationally compatible with a measured control-loop frequency on the tested hardware
+  forbidden: real-time certified
+benchmark_script: scripts/benchmark_publication_latency.py
+benchmark_script_sha256: 09b53e310ae69f5f877c5707e522d4dbbaf33f8dbe5a9ef6bfa8aa5e53ebe89d
+environment_config: configs/env_medium_v3_unified_id.yaml
+environment_config_sha256: 312b66f9e4f1246c7d3059b424613fcf375c5bcb3e9d45d62fb827e42977fe12
+active_token_counts:
+- 8
+- 16
+- 24
+- 32
+- 40
+- 48
+obstacle_composition:
+  rule: preserve the nominal Medium-ID dynamic-to-static ratio of 14-to-18 using nearest-integer dynamic counts
+  counts:
+    8: {dynamic: 4, static: 4}
+    16: {dynamic: 7, static: 9}
+    24: {dynamic: 10, static: 14}
+    32: {dynamic: 14, static: 18}
+    40: {dynamic: 18, static: 22}
+    48: {dynamic: 21, static: 27}
+  perception_sense_radius: expanded beyond the world diagonal so every configured obstacle produces an active token
+network_shape:
+  batch_size: 1
+  padded_physical_token_slots: 48
+  note: active token count changes the mask and environment workload, not the frozen checkpoint input shape
+  ra_sac_internal_boundary_token: 1
+state_corpus:
+  shared_across_methods: true
+  states_per_token_count: 32
+  seed: 20260814
+  state_generation: independent Medium-ID resets followed by index-modulo-8 goal-seeking environment steps
+timing:
+  clock: time.perf_counter_ns
+  warmup_iterations: 100
+  fast_iterations: 2000
+  shield_iterations: 500
+  end_to_end_iterations: 500
+  percentiles:
+  - median
+  - p95
+  - p99
+  report_mean: true
+runtime:
+  devices:
+  - cpu
+  - cuda
+  single_process: true
+  torch_threads: 1
+  torch_interop_threads: 1
+  blas_threads: 1
+  gpu_batch_size: 1
+  cuda_synchronize_before_and_after_each_sample: true
+components:
+- observation_raw
+- observation_pack
+- observation_total
+- policy
+- static_boundary_only_shield
+- dynamic_ttc_only_shield
+- full_shield
+- end_to_end_policy_only
+- end_to_end_static_boundary_only
+- end_to_end_dynamic_ttc_only
+- end_to_end_full_shield
+methods:
+  SAC-MLP:
+    train_config: configs/train_sac_mlp_v3_medium_seed_18207.yaml
+    checkpoint: outputs/train_sac_mlp_v3_medium_seed_18207/20260613_225555_sac_mlp/checkpoints/sac_mlp_step_1000000.pt
+    checkpoint_sha256: 3fe66c875fae4c16d446be48eef0a3faf3d66f7e597969ff789a795d997125f7
+    training_seed: 18207
+    checkpoint_step: 1000000
+  SAC-Attention-v3:
+    train_config: configs/train_sac_attention_v3_medium_seed_18207.yaml
+    checkpoint: outputs/train_sac_attention_v3_medium_seed_18207/20260611_214830_sac_attention_v3_medium_seed_18207/checkpoints/sac_attention_v3_medium_seed_18207_step_1000000.pt
+    checkpoint_sha256: f78a0381ea806309c99e5672c12ad9892070dfd1621b7a080dd783985db5f8fc
+    training_seed: 18207
+    checkpoint_step: 1000000
+  RA-SAC-v3.2-c:
+    train_config: configs/v3_2_tuning/train_ra_sac_v3_2c_medium_seed_18207.yaml
+    checkpoint: outputs/tuning_ra_sac_v3_2c_medium_seed_18207/20260705_103556_ra_sac_v3_2c_medium_seed_18207/checkpoints/ra_sac_v3_2c_medium_seed_18207_step_1000000.pt
+    checkpoint_sha256: 2c07d73b152ccf3a13c4a0b59758cc83065861aed00046074ee75dd91d68cb0a
+    training_seed: 18207
+    checkpoint_step: 1000000
+shield_parameters:
+  static_margin_m: 100.0
+  boundary_margin_m: 120.0
+  dynamic_margin_m: 50.0
+  dynamic_ttc_margin_s: 4.0
+  dynamic_risk_threshold: 0.5
+  omega_samples: 9
+  lookahead_steps: 4
+  safety_violation_weight: 80.0
+reporting:
+  timing_unit: milliseconds
+  summary_statistics: [mean, median, p95, p99]
+  control_frequency_hz: 1000 divided by measured end-to-end latency in milliseconds
+  primary_worst_scale: 48 active physical tokens
+  questions:
+  - RA-SAC policy-latency increment relative to SAC-Attention
+  - whether Shield dominates end-to-end computational cost
+  - p95 and p99 compatible control-loop frequencies at 48 active tokens
+asset_sha256:
+  configs/env_medium_v3_unified_id.yaml: 312b66f9e4f1246c7d3059b424613fcf375c5bcb3e9d45d62fb827e42977fe12
+  configs/v3_2_tuning/train_ra_sac_v3_2c_medium_seed_18207.yaml: 817467980610ff6a6d77b219cf19ff948a6de596ad084088ce8a485c24995ad9
+  configs/train_sac_attention_v3_medium_seed_18207.yaml: 223f3b716075fdba9bdda68ae40ea90051ab5c21644818531ca327ad21543fef
+  configs/train_sac_mlp_v3_medium_seed_18207.yaml: 0a1d988a3ab5a21e79a5b2d46715a4353c90c1b82e20b0517b0b49bb563fce08
+  outputs/tuning_ra_sac_v3_2c_medium_seed_18207/20260705_103556_ra_sac_v3_2c_medium_seed_18207/checkpoints/ra_sac_v3_2c_medium_seed_18207_step_1000000.pt: 2c07d73b152ccf3a13c4a0b59758cc83065861aed00046074ee75dd91d68cb0a
+  outputs/train_sac_attention_v3_medium_seed_18207/20260611_214830_sac_attention_v3_medium_seed_18207/checkpoints/sac_attention_v3_medium_seed_18207_step_1000000.pt: f78a0381ea806309c99e5672c12ad9892070dfd1621b7a080dd783985db5f8fc
+  outputs/train_sac_mlp_v3_medium_seed_18207/20260613_225555_sac_mlp/checkpoints/sac_mlp_step_1000000.pt: 3fe66c875fae4c16d446be48eef0a3faf3d66f7e597969ff789a795d997125f7
+  agents/observation.py: 0d60121a6076ec0fe3c7324065a1ebe663ad854138f39f9937c22ab64955657a
+  agents/sac_attention.py: ac12bfe697817e0314d8bcc2b685b196773aa05e5910a8b58bdb781dced79ad9
+  agents/sac_mlp.py: 50baa02c6e4135d258d0514422f6a51ebd8a2c3e8bf7baab76bf90777359ec3d
+  agents/metrics.py: 350776f161121a8676e19bbd20e7ea3d51ac2550ed4f0f8e94aa91f9f6999173
+  envs/uav_2d_env.py: d34f655d1f86aca474919d56519a55139e901d09e845a1ee30f79659e4db0130
+  utils/action_safety.py: 5f7266399b4068525e4079dd364cf0d3f768ce664ef313c41b0c12c427e5685d
+  utils/geometry.py: 95de5a26eb4bae4703194cc33160bc3002229bdf1f8fc98c4988109f319ce9cd
+  utils/risk.py: 042954bb09058d23c81b25e70a2e44be457b82632593b5804823af8fdf707361
+  utils/experiment_protocol.py: e5856b6e9b17320763f9f899b0c639131beea7afc13893749bcfcb0ea8934898
+  utils/checkpoint_compat.py: 0974b5e8c994bdc13cc425f75045086f9884eafcc9067d780e351d1ac235e469
+  scripts/evaluate_sac_attention_checkpoint.py: 61bc38c5a1d076bb7181c9311a6ececd4f81a6123fc7151bac90496df5a590b1
+  scripts/evaluate_publication_mlp_baseline.py: 13901a7d03e126f0912213db55c4669044c9c25aa6e4eeb5536959c9662113e8

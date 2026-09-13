@@ -1,0 +1,45 @@
+env_config: configs/env_medium_v3_unified_id.yaml
+algorithm:
+  name: ra_sac_v3_2c_medium_seed_18207
+  risk_bias_mode: log1p_risk
+  risk_bias_scale: 0.25
+  risk_bias_clip: 1.5
+  goal_guidance:
+    enabled: true
+    type: velocity_projection
+    lambda: 0.030
+    dt_s: 1.0
+    speed_scale_mps: 20.0
+    v_min_mps: 0.0
+    v_max_mps: 15.0
+    safe_clearance_norm: 0.02
+    safe_ttc_norm: 0.25
+    safe_risk_norm: 0.5
+    gate_temperature: 0.05
+seed: 18207
+device: auto
+training:
+  total_steps: 4000000
+  start_steps: 15000
+  update_after: 15000
+  update_every: 1
+  batch_size: 256
+  replay_size: 500000
+  gamma: 0.99
+  tau: 0.005
+  actor_lr: 0.0002
+  critic_lr: 0.0003
+  alpha_lr: 0.0003
+  hidden_sizes:
+  - 256
+  - 256
+  embed_dim: 128
+  eval_interval_steps: 100000
+  eval_episodes: 20
+  checkpoint_interval_steps: 500000
+  eval_seed: 17000
+  env_seed_namespace: formal_v3_training
+output:
+  directory: outputs/tuning_ra_sac_v3_2c_medium_seed_18207
+
+

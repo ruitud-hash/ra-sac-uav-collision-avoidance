@@ -1,0 +1,25 @@
+env_config: configs/env_sanity_shaped.yaml
+
+seed: 8207
+device: auto
+
+training:
+  total_steps: 100000
+  start_steps: 5000
+  update_after: 1000
+  update_every: 1
+  batch_size: 256
+  replay_size: 500000
+  gamma: 0.99
+  tau: 0.005
+  actor_lr: 0.0003
+  critic_lr: 0.0003
+  alpha_lr: 0.0003
+  hidden_sizes: [256, 256]
+  embed_dim: 128
+  eval_interval_steps: 5000
+  eval_episodes: 20
+  checkpoint_interval_steps: 25000
+
+output:
+  directory: outputs/train_sac_attention_sanity_shaped

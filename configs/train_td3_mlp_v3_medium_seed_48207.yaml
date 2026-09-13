@@ -1,0 +1,30 @@
+env_config: configs/env_medium_v3_unified_id.yaml
+device: auto
+algorithm:
+  name: td3_mlp_v3_medium_seed_48207
+seed: 48207
+training:
+  total_steps: 4000000
+  gamma: 0.99
+  eval_interval_steps: 100000
+  eval_episodes: 20
+  checkpoint_interval_steps: 500000
+  eval_seed: 17000
+  env_seed_namespace: formal_v3_training
+  start_steps: 15000
+  update_after: 15000
+  update_every: 1
+  batch_size: 256
+  replay_size: 500000
+  tau: 0.005
+  actor_lr: 0.0002
+  critic_lr: 0.0003
+  hidden_sizes:
+  - 256
+  - 256
+  exploration_noise: 0.12
+  policy_noise: 0.2
+  noise_clip: 0.5
+  policy_delay: 2
+output:
+  directory: outputs/train_td3_mlp_v3_medium_seed_48207

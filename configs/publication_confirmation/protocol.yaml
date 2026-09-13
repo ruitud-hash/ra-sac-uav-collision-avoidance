@@ -1,0 +1,168 @@
+protocol_version: 1
+status: frozen_before_execution
+frozen_date: 2026-08-09
+target_journal: Aerospace Systems
+namespace: publication_confirmation_v1
+
+paper_claim:
+  primary: system_level_fair_reproducible_validation
+  superiority_claim_allowed: false
+  causal_attention_claim_allowed: false
+  certified_realtime_claim_allowed: false
+
+history_boundary:
+  preserve_stage1_stage2_stage3: true
+  preserve_decision: NO_GO_CLOSE_R0_ROUTE
+  overwrite_historical_artifacts: false
+  reuse_old_final_as_confirmation: false
+
+training_seeds: [18207, 28207, 38207, 48207, 58207]
+
+checkpoint_rule:
+  selection: fixed_nominal_training_budget
+  nominal_environment_steps: 1000000
+  best_checkpoint_allowed: false
+  ood_selection_allowed: false
+  per_seed_selection_allowed: false
+  methods:
+    RA-SAC-v3.2-c:
+      step: 1000000
+      checkpoint_glob: outputs/tuning_ra_sac_v3_2c_medium_seed_{training_seed}/*/checkpoints/*_step_1000000.pt
+      evaluation_config: configs/v3_2_tuning/train_ra_sac_v3_2c_medium_seed_18207.yaml
+      evaluation_contract: identical architecture and hyperparameters verified against seed 38207; per-run protocol_metadata supplies the actual training seed
+      missing_historical_per_seed_config_files: [28207, 48207, 58207]
+      execution_requirement: evaluator must record the actual checkpoint training seed instead of the seed embedded in the shared evaluation config
+    SAC-Attention-v3:
+      step: 1000000
+      checkpoint_glob: outputs/train_sac_attention_v3_medium_seed_{training_seed}/*/checkpoints/*_step_1000000.pt
+      train_config: configs/train_sac_attention_v3_medium_seed_{training_seed}.yaml
+    SAC-MLP:
+      step: 1000000
+      checkpoint_glob: outputs/train_sac_mlp_v3_medium_seed_{training_seed}/*/checkpoints/*_step_1000000.pt
+      train_config: configs/train_sac_mlp_v3_medium_seed_{training_seed}.yaml
+    TD3-MLP:
+      step: 1000000
+      checkpoint_glob: outputs/train_td3_mlp_v3_medium_seed_{training_seed}/*/checkpoints/*_step_1000000.pt
+      train_config: configs/train_td3_mlp_v3_medium_seed_{training_seed}.yaml
+    PPO-MLP:
+      step: 1003520
+      rationale: first completed PPO rollout boundary at or above the nominal 1M budget
+      checkpoint_glob: outputs/train_ppo_mlp_v3_medium_seed_{training_seed}/*/checkpoints/*_step_1003520.pt
+      train_config: configs/train_ppo_mlp_v3_medium_seed_{training_seed}.yaml
+
+publication_final:
+  seed_start: 149000
+  seed_end: 149199
+  episodes_per_training_seed: 200
+  prior_use_audit:
+    result: passed
+    audited_on: 2026-08-09
+    scanner: scripts.audit_stage0_checkpoints.scan_historical_seed_use
+    scanned_roots: [configs, outputs, tables]
+  opening_rule: open once only after checkpoints, source, metrics, shield parameters, and analysis code are frozen
+  paired_scenarios_across_methods: true
+  early_stopping_allowed: false
+  preview_runs_allowed: false
+  replace_or_extend_seed_block_allowed: false
+
+environments:
+  medium_id: configs/env_medium_v3_unified_id.yaml
+  disturbance_ood: configs/env_medium_v3_disturbance_ood.yaml
+  behavior_ood: configs/env_medium_v3_behavior_ood.yaml
+  composition_ood: configs/env_medium_v3_composition_ood.yaml
+  combined_ood: configs/env_medium_v3_combined_ood.yaml
+
+evaluation_matrix:
+  p0_primary:
+    methods: [RA-SAC-v3.2-c, SAC-Attention-v3]
+    environments: [medium_id, combined_ood]
+    modes: [policy_only, full_shield]
+  p0_context_baselines:
+    methods: [SAC-MLP, TD3-MLP, PPO-MLP]
+    environments: [medium_id]
+    modes: [policy_only, full_shield]
+  p1_single_axis_ood:
+    methods: [RA-SAC-v3.2-c, SAC-Attention-v3]
+    environments: [disturbance_ood, behavior_ood, composition_ood]
+    modes: [policy_only]
+  p1_shield_decomposition:
+    methods: [RA-SAC-v3.2-c, SAC-Attention-v3]
+    environments: [medium_id]
+    modes: [policy_only, static_boundary_only, dynamic_ttc_only, full_shield]
+    execution_note: dynamic_ttc_only requires a backward-compatible evaluator toggle; existing shield defaults must not change
+
+shield:
+  parameter_source: frozen formal defaults in utils.training_logs and scripts/evaluate_sac_attention_checkpoint.py
+  retuning_allowed: false
+  full_shield_lookahead_steps: 4
+  report: [SIF, SIR, SCM, shield_latency]
+  interpretation:
+    policy_only: intrinsic_learned_navigation
+    shielded: protected_autonomy_stack
+
+metrics:
+  primary: [success_rate, dynamic_collision_rate, static_collision_rate, safety_failure_rate, timeout_rate, out_of_bounds_rate]
+  secondary: [reward_mean, fhp_count_mean, path_length_m]
+  shield_only: [SIF, SIR, SCM]
+  safety_failure_definition: dynamic_collision + static_collision + out_of_bounds
+  ood_delta_definition: OOD - medium_ID
+
+statistics:
+  unit: paired_training_seed
+  report:
+    - paired_seed_differences
+    - mean_difference
+    - median_difference
+    - hierarchical_or_paired_bootstrap_95pct_CI
+    - win_tie_loss
+    - worst_seed_difference
+  episode_pseudoreplication_forbidden: true
+  significance_language_primary: false
+  wilcoxon_note: exact two-sided minimum p is 0.0625 for five non-zero paired differences
+
+latency:
+  methods: [RA-SAC-v3.2-c, SAC-Attention-v3]
+  devices: [cpu_single_thread, gpu_batch_1]
+  obstacle_counts: [8, 16, 24, 32, 40, 48]
+  warmup_calls: 100
+  timed_calls: 1000
+  report_ms: [mean, median, p95, p99]
+  components: [observation_construction, policy_inference, shield, total_decision]
+  hardware_and_software_manifest_required: true
+  concurrent_training_processes_allowed: false
+  wording: computationally compatible with an X-Hz decision loop on the evaluated hardware
+
+targeted_ablation:
+  requires_new_training: true
+  arms: [Base, Risk_only, Full]
+  optional_arm: Goal_only
+  preferred_training_seeds: 5
+  minimum_training_seeds: 3
+  same_observation_sac_budget_seeds_and_checkpoint_rule: true
+  no_hyperparameter_retuning_after_publication_final: true
+
+forbidden_changes:
+  - risk_bias_scale_tuning
+  - lambda_tuning
+  - v3_3_or_v3_4_development
+  - R0_route_revival
+  - QBAR_or_action_conditioned_critic
+  - reward_redesign
+  - observation_redesign
+  - OOD_definition_change
+  - shield_core_logic_change
+
+artifact_policy:
+  output_root: outputs/publication_confirmation_v1
+  append_only: true
+  required_before_execution:
+    - exact_checkpoint_paths_and_SHA256
+    - protocol_SHA256
+    - source_snapshot_SHA256
+    - resolved_environment_configs
+    - hardware_and_software_manifest
+  required_per_run:
+    - episode_level_CSV
+    - aggregate_YAML
+    - evaluation_audit_record
+    - stdout_log

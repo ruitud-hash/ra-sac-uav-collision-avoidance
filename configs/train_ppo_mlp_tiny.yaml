@@ -1,0 +1,27 @@
+env_config: configs/env_tiny.yaml
+
+algorithm:
+  name: ppo_mlp_tiny
+
+seed: 2107
+device: auto
+
+training:
+  total_steps: 30000
+  rollout_steps: 1024
+  update_epochs: 6
+  minibatch_size: 256
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_ratio: 0.20
+  value_coef: 0.50
+  entropy_coef: 0.01
+  max_grad_norm: 0.50
+  lr: 0.0003
+  hidden_sizes: [256, 256]
+  eval_interval_steps: 3000
+  eval_episodes: 10
+  checkpoint_interval_steps: 10000
+
+output:
+  directory: outputs/train_ppo_mlp_tiny

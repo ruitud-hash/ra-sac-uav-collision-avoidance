@@ -1,0 +1,158 @@
+protocol_version: 1.1
+analysis_id: attention_risk_consistency_v1
+status: frozen_before_execution
+frozen_date: 2026-08-20
+classification: post_hoc_frozen_checkpoint_mechanism_diagnostic
+supersedes: attention_risk_consistency_protocol_v1.yaml
+runtime_remediation: >-
+  Version 1 incorrectly assumed the later CUDA analysis environment. Version
+  1.1 restores the exact CPU runtime recorded for the original blind
+  evaluation. No state-selection, metric, aggregation, or reporting rule was
+  changed, and no mechanism result was written or inspected before this fix.
+
+research_question: >-
+  In a frozen RA-SAC network and on identical input states, how much immediate
+  change in obstacle-attention allocation is produced by the analytic risk
+  prior in Eq. (9)?
+
+interpretation_boundaries:
+  allowed: >-
+    The analytic risk prior shifted frozen RA-SAC attention allocation toward
+    higher-risk obstacle tokens by the measured amount.
+  forbidden:
+    - the diagnostic estimates the effect of training without the risk prior
+    - the diagnostic isolates the contribution of training-only goal guidance
+    - the attention shift caused a success-rate or collision-rate difference
+    - RA-SAC versus SAC-Attention attention differences are causal effects of the prior
+  note: >-
+    RA-SAC content logits were learned while the prior was present during
+    training. The within-network decomposition isolates only the additive
+    prior's immediate inference-time attention effect in the frozen network.
+
+environments:
+  Medium-ID: configs/env_medium_v3_unified_id.yaml
+  Combined-OOD: configs/env_medium_v3_combined_ood.yaml
+
+training_seeds: [18207, 28207, 38207, 48207, 58207]
+blind_episode_seeds:
+  start: 149000
+  end: 149199
+  count: 200
+
+checkpoints:
+  selection: fixed_nominal_training_budget
+  step: 1000000
+  RA-SAC:
+    glob: outputs/tuning_ra_sac_v3_2c_medium_seed_{training_seed}/*/checkpoints/*_step_1000000.pt
+    train_config: configs/v3_2_tuning/train_ra_sac_v3_2c_medium_seed_18207.yaml
+  SAC-Attention:
+    glob: outputs/train_sac_attention_v3_medium_seed_{training_seed}/*/checkpoints/*_step_1000000.pt
+    train_config: configs/train_sac_attention_v3_medium_seed_{training_seed}.yaml
+
+trajectory_pool:
+  evaluation_mode: deterministic_policy_only
+  generating_policies: [RA-SAC, SAC-Attention]
+  pooling: equal_weight_across_generating_policies
+  reference_results_root: outputs/publication_confirmation_v1/formal_blind_batch1
+  reference_episode_csv_rule: >-
+    exactly one policy-only episodes.csv must match environment, method,
+    training seed, and the original blind batch
+
+state_sampling:
+  decision_state: observation immediately before the generating policy action
+  eligible_if:
+    minimum_valid_obstacle_tokens: 2
+    valid_token_risk_values_not_all_equal: true
+  maximum_states_per_episode: 10
+  ranking: ascending_sha256
+  hash_namespace: attention-risk-consistency-v1
+  hash_payload: >-
+    attention-risk-consistency-v1|environment|training_seed|episode_seed|generating_policy|timestep
+  hash_encoding: UTF-8
+  selection_rule: take the ten eligible states with the smallest SHA-256 digests
+  prohibited_selection_inputs:
+    - attention weights
+    - terminal outcome
+    - collision proximity
+    - reward
+    - action correction
+
+paired_decomposition:
+  primary: frozen_RA-SAC_full_minus_frozen_RA-SAC_content_only
+  content_only_logits: q_dot_k_div_sqrt_d_then_mask_then_softmax
+  full_logits: q_dot_k_div_sqrt_d_plus_0.25_log1p_risk_then_mask_then_softmax
+  fixed_within_pair: [network parameters, q, k, tokens, mask, input state]
+  contextual_only: frozen_SAC-Attention_on_the_identical_state_pool
+
+metrics:
+  primary:
+    name: delta_attention_weighted_risk
+    definition: sum_i(full_attention_i * risk_i) - sum_i(content_attention_i * risk_i)
+  secondary:
+    - name: delta_top_risk_attention_mass
+      definition: >-
+        full minus content-only attention mass summed over all valid tokens tied
+        for maximum risk
+    - name: delta_top_risk_is_top_attended_rate
+      definition: >-
+        change in the indicator that at least one maximum-risk token is also
+        tied for maximum attention
+  contextual:
+    - SAC-Attention attention-weighted risk
+    - SAC-Attention top-risk attention mass
+    - SAC-Attention top-risk-is-top-attended rate
+  tie_handling:
+    top_risk: all valid tokens exactly tied at the maximum stored float32 risk
+    top_attention: all valid tokens exactly tied at the maximum computed attention
+
+aggregation:
+  hierarchy:
+    - mean over selected states within each episode
+    - mean over eligible episodes within each generating-policy trajectory pool
+    - equal mean over the two generating-policy pools within each training seed
+    - five-training-seed summary within each environment
+  inferential_unit: training_seed
+  five_seed_report: [individual_seed_values, mean, median, sample_SD, minimum, maximum]
+  bootstrap: none
+  state_level_independence_claimed: false
+  required_coverage_report:
+    - eligible episodes
+    - selected states
+    - eligible decision states before capping
+
+integrity_checks:
+  - all frozen file hashes match the pre-execution manifest
+  - every replayed terminal outcome and step count matches the original episodes.csv
+  - RA-SAC risk-bias mode is log1p_risk with scale 0.25
+  - SAC-Attention risk-bias mode is none
+  - valid attention weights are finite, non-negative, and sum to one
+  - reconstructed RA-SAC additive logits equal 0.25*log1p(risk) on valid tokens
+  - every selected state satisfies the eligibility rule
+  - no episode contributes more than ten states
+
+reporting_rule:
+  retain_if_integrity_passes: true
+  retain_regardless_of_effect_size_or_environment_consistency: true
+  no_metric_or_state_reselection_after_opening: true
+  manuscript_inclusion_decided_only_after_result_review: true
+
+runtime:
+  python_environment: E:/anacondafile/python.exe
+  python: 3.12.7
+  torch: 2.9.1+cpu
+  numpy: 1.26.4
+  device: cpu
+  deterministic_replay_matches_original_evaluator_device_rule: true
+
+artifact_policy:
+  output_root: outputs/publication_confirmation_v1/post_hoc_diagnostics/attention_risk_consistency_v1
+  append_only: true
+  required_outputs:
+    - state_metrics.csv
+    - episode_aggregates.csv
+    - generating_policy_aggregates.csv
+    - seed_aggregates.csv
+    - five_seed_summary.csv
+    - coverage_and_integrity.csv
+    - run_manifest.yaml
+    - stdout.log

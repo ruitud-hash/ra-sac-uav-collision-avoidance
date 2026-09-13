@@ -1,0 +1,51 @@
+seed: 17
+
+world:
+  size_m: 15000.0
+  boundary_margin_m: 300.0
+
+uav:
+  body_radius_m: 15.0
+  v_min_mps: 0.0
+  v_max_mps: 15.0
+  a_max_mps2: 2.0
+  omega_max_degps: 15.0
+  dt_s: 1.0
+  max_steps: 1200
+  start_speed_mps: 8.0
+
+task:
+  min_start_goal_distance_m: 2000.0
+  max_start_goal_distance_m: 8000.0
+  goal_radius_m: 80.0
+
+perception:
+  sense_radius_m: 500.0
+  max_tokens: 32
+  ttc_max_s: 60.0
+
+obstacles:
+  dynamic_count: 2
+  static_count: 5
+  dynamic_speed_min_mps: 5.0
+  dynamic_speed_max_mps: 12.0
+  dynamic_protect_radius_m: 30.0
+  dynamic_warning_radius_m: 120.0
+  static_safe_margin_m: 40.0
+
+reward:
+  progress_scale: 20.0
+  goal_reward: 150.0
+  dynamic_collision_penalty: 150.0
+  static_collision_penalty: 150.0
+  boundary_penalty: 150.0
+  boundary_safe_margin_m: 500.0
+  boundary_near_penalty: 0.8
+  timeout_penalty: 50.0
+  warning_penalty: 0.4
+  static_near_penalty: 0.3
+  smooth_penalty_scale: 0.02
+  step_penalty: 0.01
+
+visualization:
+  save_path: outputs/sanity_shaped_episode.png

@@ -1,0 +1,30 @@
+env_config: configs/env_tiny.yaml
+
+algorithm:
+  name: td3_mlp_tiny
+
+seed: 3107
+device: auto
+
+training:
+  total_steps: 30000
+  start_steps: 3000
+  update_after: 1000
+  update_every: 1
+  batch_size: 256
+  replay_size: 200000
+  gamma: 0.99
+  tau: 0.005
+  actor_lr: 0.0003
+  critic_lr: 0.0003
+  hidden_sizes: [256, 256]
+  exploration_noise: 0.12
+  policy_noise: 0.20
+  noise_clip: 0.50
+  policy_delay: 2
+  eval_interval_steps: 3000
+  eval_episodes: 10
+  checkpoint_interval_steps: 10000
+
+output:
+  directory: outputs/train_td3_mlp_tiny
